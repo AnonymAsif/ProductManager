@@ -26,6 +26,8 @@ public class MyDBHandler extends SQLiteOpenHelper {
                 COLUMN_PRODUCT_PRICE + " DOUBLE " + ")";
 
         db.execSQL(create_table_cmd);
+
+
     }
 
     @Override
@@ -37,6 +39,29 @@ public class MyDBHandler extends SQLiteOpenHelper {
     public Cursor getData() {
         SQLiteDatabase db = this.getReadableDatabase();
         String query = "SELECT * FROM " + TABLE_NAME;
+        return db.rawQuery(query, null); // returns "cursor" all products from the table
+    }
+
+    public Cursor getData(String name, Double price) {
+        SQLiteDatabase db = this.getReadableDatabase();
+//        String query = "SELECT * FROM %s WHERE %s LIKE %s AND %s = %f"
+//                .formatted(TABLE_NAME, COLUMN_PRODUCT_NAME, name, COLUMN_PRODUCT_PRICE, price);
+
+
+        String query = "SELECT * FROM " + TABLE_NAME;
+
+        if (!name.isBlank() || price != null)
+            query += " WHERE ";
+        if (!name.isBlank())
+            query += COLUMN_PRODUCT_NAME + " LIKE \'%" + name + "%\'";
+        if (price != null) {
+            if (!name.isBlank()) query += " AND ";
+            query += COLUMN_PRODUCT_PRICE + " BETWEEN ";
+            if (price.longValue() == price) query += price - 0.05 + " AND " + (price + 1);
+            else query += price.longValue() + " AND " + price;
+        }
+        //greatest branching of all time
+
         return db.rawQuery(query, null); // returns "cursor" all products from the table
     }
 

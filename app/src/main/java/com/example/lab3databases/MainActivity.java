@@ -47,36 +47,46 @@ public class MainActivity extends AppCompatActivity {
         // db handler
         dbHandler = new MyDBHandler(this);
 
+
+
         // button listeners
-        addBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String name = productName.getText().toString();
-                double price = Double.parseDouble(productPrice.getText().toString());
-                Product product = new Product(name, price);
-                dbHandler.addProduct(product);
+        addBtn.setOnClickListener(v -> {
+            String name = productName.getText().toString();
 
-                productName.setText("");
-                productPrice.setText("");
-
-//                Toast.makeText(MainActivity.this, "Add product", Toast.LENGTH_SHORT).show();
-                viewProducts();
+            if (!name.chars().allMatch(Character::isLetterOrDigit)) {
+                Toast.makeText(this, "Product names must be alphanumeric.", Toast.LENGTH_SHORT).show();
+                return;
             }
+            if (productPrice.getText().toString().isBlank()) {
+                Toast.makeText(this, "Products must have a price.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            double price = Double.parseDouble(productPrice.getText().toString());
+            Product product = new Product(name, price);
+            dbHandler.addProduct(product);
+
+            productName.setText("");
+            productPrice.setText("");
+
+            viewProducts(null, null);
         });
 
-        findBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "Find product", Toast.LENGTH_SHORT).show();
+        findBtn.setOnClickListener(v -> {
+            String name = productName.getText().toString();
+            if (!name.chars().allMatch(Character::isLetterOrDigit)) {
+                Toast.makeText(this, "Product names must be alphanumeric.", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            Double price;
+            if (productPrice.getText().toString().isBlank()) price = null;
+            else price = Double.parseDouble(productPrice.getText().toString());
+
+            viewProducts(name, price);
         });
 
-        deleteBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Toast.makeText(MainActivity.this, "Delete product", Toast.LENGTH_SHORT).show();
-            }
-        });
+        deleteBtn.setOnClickListener(v -> Toast.makeText(MainActivity.this, "Delete product", Toast.LENGTH_SHORT).show());
 
 
         viewProducts();
@@ -85,6 +95,21 @@ public class MainActivity extends AppCompatActivity {
     private void viewProducts() {
         productList.clear();
         Cursor cursor = dbHandler.getData();
+        if (cursor.getCount() == 0) {
+            Toast.makeText(MainActivity.this, "Nothing to show", Toast.LENGTH_SHORT).show();
+        } else {
+            while (cursor.moveToNext()) {
+                productList.add(cursor.getString(1) + " (" +cursor.getString(2)+")");
+            }
+        }
+
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, productList);
+        productListView.setAdapter(adapter);
+    }
+
+    private void viewProducts(String name, Double price) {
+        productList.clear();
+        Cursor cursor = dbHandler.getData(name, price);
         if (cursor.getCount() == 0) {
             Toast.makeText(MainActivity.this, "Nothing to show", Toast.LENGTH_SHORT).show();
         } else {

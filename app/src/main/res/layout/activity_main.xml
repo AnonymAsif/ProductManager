@@ -36,7 +36,7 @@
             android:ems="10"
             android:minHeight="50dp"
             android:hint="@string/product_price"
-            android:inputType="number" />
+            android:inputType="numberDecimal" />
     </LinearLayout>
 
     <LinearLayout

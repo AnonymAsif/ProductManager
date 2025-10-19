@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
 
         // button listeners
         addBtn.setOnClickListener(v -> {
-            String name = productName.getText().toString();
+            String name = productName.getText().toString().strip();
 
             if (name.isBlank()) {
                 Toast.makeText(this, "Products must have a name.", Toast.LENGTH_SHORT).show();
@@ -68,7 +68,9 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            if (productPrice.getText().toString().isBlank()) {
+            // Checks for at least one digit
+            // Used instead of isBlank() in case of input string "."
+            if (productPrice.getText().toString().chars().filter(Character::isDigit).findAny().isEmpty()) {
                 Toast.makeText(this, "Products must have a price.", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -84,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findBtn.setOnClickListener(v -> {
-            String name = productName.getText().toString();
+            String name = productName.getText().toString().strip();
             if (!name.chars().allMatch(Character::isLetterOrDigit)) {
                 Toast.makeText(this, "Product names must be alphanumeric.", Toast.LENGTH_SHORT).show();
                 return;
@@ -98,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         deleteBtn.setOnClickListener(v -> {
-            String name = productName.getText().toString();
+            String name = productName.getText().toString().strip();
 
             if (!name.chars().allMatch(Character::isLetterOrDigit)) {
                 Toast.makeText(this, "Product names must be alphanumeric.", Toast.LENGTH_SHORT).show();

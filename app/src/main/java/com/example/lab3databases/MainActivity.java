@@ -1,5 +1,6 @@
 package com.example.lab3databases;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.database.Cursor;
@@ -48,15 +49,25 @@ public class MainActivity extends AppCompatActivity {
         dbHandler = new MyDBHandler(this);
 
 
-
         // button listeners
         addBtn.setOnClickListener(v -> {
             String name = productName.getText().toString();
+
+            if (name.isBlank()) {
+                Toast.makeText(this, "Products must have a name.", Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             if (!name.chars().allMatch(Character::isLetterOrDigit)) {
                 Toast.makeText(this, "Product names must be alphanumeric.", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            if (!Character.isAlphabetic(name.charAt(0))) {
+                Toast.makeText(this, "Product names must begin with a letter.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             if (productPrice.getText().toString().isBlank()) {
                 Toast.makeText(this, "Products must have a price.", Toast.LENGTH_SHORT).show();
                 return;
@@ -69,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
             productName.setText("");
             productPrice.setText("");
 
-            viewProducts(null, null);
+            viewProducts();
         });
 
         findBtn.setOnClickListener(v -> {
@@ -86,8 +97,34 @@ public class MainActivity extends AppCompatActivity {
             viewProducts(name, price);
         });
 
-        deleteBtn.setOnClickListener(v -> Toast.makeText(MainActivity.this, "Delete product", Toast.LENGTH_SHORT).show());
+        deleteBtn.setOnClickListener(v -> {
+            String name = productName.getText().toString();
 
+            if (!name.chars().allMatch(Character::isLetterOrDigit)) {
+                Toast.makeText(this, "Product names must be alphanumeric.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Double price;
+            if (productPrice.getText().toString().isBlank()) price = null;
+            else price = Double.parseDouble(productPrice.getText().toString());
+
+            // Double check with user if they deleted without filters
+            if (price == null && name.isBlank()) {
+                AlertDialog confirmDialog = new AlertDialog.Builder(this)
+                        .setTitle("Clear Database")
+                        .setMessage("You are about to delete every saved product. Would you like to continue?")
+                        .setIcon(R.drawable.ic_auto_delete_white_foreground)
+                        .setPositiveButton("Yes", (a, b) -> deleteProducts(name, price))
+                        .setNegativeButton("Cancel", (a, b) ->
+                                Toast.makeText(this, "Operation cancelled.", Toast.LENGTH_SHORT).show())
+                        .create();
+
+                confirmDialog.show();
+                return;
+            }
+            deleteProducts(name, price);
+        });
 
         viewProducts();
     }
@@ -105,6 +142,8 @@ public class MainActivity extends AppCompatActivity {
 
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, productList);
         productListView.setAdapter(adapter);
+
+        cursor.close();
     }
 
     private void viewProducts(String name, Double price) {
@@ -120,5 +159,20 @@ public class MainActivity extends AppCompatActivity {
 
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, productList);
         productListView.setAdapter(adapter);
+
+        cursor.close();
+    }
+
+    private void deleteProducts(String name, Double price) {
+        int deletionCount = dbHandler.deleteData(name, price);
+        if (deletionCount == 0) {
+            Toast.makeText(this, "Nothing to delete", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        Toast.makeText(this, "Successfully deleted " + deletionCount + " items", Toast.LENGTH_SHORT).show();
+
+        productName.setText("");
+        productPrice.setText("");
+        viewProducts();
     }
 }

@@ -44,25 +44,59 @@ public class MyDBHandler extends SQLiteOpenHelper {
 
     public Cursor getData(String name, Double price) {
         SQLiteDatabase db = this.getReadableDatabase();
-//        String query = "SELECT * FROM %s WHERE %s LIKE %s AND %s = %f"
-//                .formatted(TABLE_NAME, COLUMN_PRODUCT_NAME, name, COLUMN_PRODUCT_PRICE, price);
 
+        // Accounts for possible null calls (parameter should be blank, not null)
+        if (name.isBlank()) name = null;
 
-        String query = "SELECT * FROM " + TABLE_NAME;
+        // returns "cursor" all products from the table
+        if (name == null && price == null)
+            return db.rawQuery("SELECT * FROM " + TABLE_NAME, null);
 
-        if (!name.isBlank() || price != null)
-            query += " WHERE ";
-        if (!name.isBlank())
-            query += COLUMN_PRODUCT_NAME + " LIKE \'%" + name + "%\'";
-        if (price != null) {
-            if (!name.isBlank()) query += " AND ";
-            query += COLUMN_PRODUCT_PRICE + " BETWEEN ";
-            if (price.longValue() == price) query += price - 0.05 + " AND " + (price + 1);
-            else query += price.longValue() + " AND " + price;
-        }
-        //greatest branching of all time
+        // Searches by name
+        if (name != null && price == null)
+            return db.rawQuery("SELECT * FROM %s WHERE %s LIKE ?".formatted(TABLE_NAME, COLUMN_PRODUCT_NAME),
+                    new String[]{"%" + name + "%"});
 
-        return db.rawQuery(query, null); // returns "cursor" all products from the table
+        double priceMin = price.longValue() == price ? price - 0.05 : price;
+        double priceMax = price.longValue() == price ? price + 1 : price;
+
+        // Searches by price
+        if (name == null)
+            return db.rawQuery("SELECT * FROM %s WHERE %s BETWEEN ? AND ?".formatted(TABLE_NAME, COLUMN_PRODUCT_PRICE),
+                    new String[]{String.valueOf(priceMin), String.valueOf(priceMax)});
+
+        // Search by both name and price
+        return db.rawQuery("SELECT * FROM %s WHERE %s LIKE ? AND %s BETWEEN ? AND ?".formatted(TABLE_NAME, COLUMN_PRODUCT_NAME, COLUMN_PRODUCT_PRICE),
+                new String[] {"%" + name + "%", String.valueOf(priceMin), String.valueOf(priceMax)});
+    }
+
+    public int deleteData(String name, Double price) {
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Accounts for possible null calls (parameter should be blank, not null)
+        if (name.isBlank()) name = null;
+
+        // returns "cursor" all products from the table
+        if (name == null && price == null)
+            return db.delete(TABLE_NAME, null,null);
+
+        // Searches by name
+        else if (name != null && price == null)
+            return db.delete(TABLE_NAME, COLUMN_PRODUCT_NAME + " = ?", new String[]{name});
+            //db.rawQuery("DELETE FROM %s WHERE %s = ?".formatted(TABLE_NAME, COLUMN_PRODUCT_NAME),
+              //      new String[]{name}).close();
+
+        // Searches by price
+        else if (name == null)
+            return db.delete(TABLE_NAME, COLUMN_PRODUCT_PRICE + " = ?", new String[]{String.valueOf(price)});
+            //db.rawQuery("DELETE FROM %s WHERE %s = ?".formatted(TABLE_NAME, COLUMN_PRODUCT_PRICE),
+              //      new String[]{String.valueOf(price)}).close();
+
+        // Search by both name and price
+        else return db.delete(TABLE_NAME, "%s = ? AND %s = ?".formatted(COLUMN_PRODUCT_NAME, COLUMN_PRODUCT_PRICE),
+                    new String[]{name, String.valueOf(price)});
+            //db.rawQuery("DELETE FROM %s WHERE %s = ? AND %s = ?".formatted(TABLE_NAME, COLUMN_PRODUCT_NAME, COLUMN_PRODUCT_PRICE),
+              //  new String[] {name, String.valueOf(price)}).close();
     }
 
     public void addProduct(Product product) {
